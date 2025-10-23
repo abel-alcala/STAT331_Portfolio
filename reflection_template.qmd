@@ -12,6 +12,7 @@ editor: source
 embed-resources: true
 code-tools: true
 echo: true
+eval: false
 message: false
 warning: false
 ---
@@ -28,21 +29,32 @@ warning: false
 
 ```{r}
 #| label: wd-1-csv-1
+# Lab 3 Q2
 
+teacher_evals <- read_csv(here::here("Week 3", "Lab 3", "teacher_evals.csv"))
 ```
 
 -   `csv` Example 2
 
 ```{r}
 #| label: wd-1-csv-2
+# PA 5
 
+suspects <- read_csv("https://raw.githubusercontent.com/zoerehnberg/STAT331-S23/main/practice_activities/suspects.csv")
 ```
 
 -   `xlsx`
 
 ```{r}
 #| label: wd-1-xlsx
+# PA 4
 
+cont_region <- read_xlsx(here::here(
+                                    "gov_spending_per_capita.xlsx"),
+                      sheet = "Regional totals",
+                      skip = 14) |>
+  filter(Region != "World total (including Iraq)",
+         Region != "World total (excluding Iraq)")
 ```
 
 **WD-2: I can select necessary columns from a dataset.**
@@ -51,6 +63,25 @@ warning: false
 
 ```{r}
 #| label: wd-2-ex-1
+#| Lab 3 Q5 
+
+teacher_evals_clean <- teacher_evals |>
+  rename(sex = gender) |>
+  filter(no_participants * resp_share >= 10) |>
+  mutate(course_id = as.character(course_id),
+         teacher_id = as.character(teacher_id),
+         questionno = as.integer(question_no)) |>
+  select(course_id, 
+         teacher_id, 
+         question_no,
+         no_participants, 
+         resp_share, 
+         SET_score_avg, 
+         percent_failed_cur, 
+         academic_degree, 
+         seniority,
+         sex)
+teacher_evals_clean
 
 ```
 
@@ -58,6 +89,19 @@ warning: false
 
 ```{r}
 #| label: wd-2-ex-2
+#| Lab 3 Q10
+
+teacher_evals_compare <- teacher_evals |>
+  filter(question_no == 903) |>
+  mutate(
+    SET_level = if_else(SET_score_avg >= 4, "excellent", "standard"),
+    sen_level = case_when(
+      seniority <= 4 ~ "junior",
+      seniority >= 5 & seniority <= 8 ~ "senior",
+      seniority > 8 ~ "very senior"
+    )
+  ) |>
+  select(course_id, SET_level, sen_level)
 
 ```
 
@@ -74,6 +118,11 @@ warning: false
 
 ```{r}
 #| label: wd-3-numeric-ex-1
+#| Lab 5
+
+interview |>
+  filter(person_id == 67318) |>
+  pull(transcript)
 
 ```
 
@@ -81,6 +130,20 @@ warning: false
 
 ```{r}
 #| label: wd-3-numeric-ex-1
+# Lab 3, Question 5 (cleaning pipeline includes numeric filter on no_participants)
+
+teacher_evals_clean = teacher_evals |>
+ rename(sex = gender) |>
+ filter(no_participants >= 10) |>
+ select(course_id, teacher_id, question_no, no_participants,
+        resp_share, SET_score_avg, percent_failed_cur,
+        academic_degree, seniority, sex) |>
+ mutate(
+   across(.cols = course_id:teacher_id, 
+          .fns = ~ as.character(.x)),
+   across(.cols = c(academic_degree, sex),
+          .fns = ~ as.factor(.x))
+ )
 
 ```
 
@@ -88,6 +151,13 @@ warning: false
 
 ```{r}
 #| label: wd-3-character
+#| Lab 5 Step 6
+
+concert_attendees <- facebook_event_checkin |>
+  filter(event_name == "SQL Symphony Concert",
+         date >= 20171201 & date <= 20171231) |>
+  count(person_id) |>
+  filter(n == 3)
 
 ```
 
@@ -95,6 +165,11 @@ warning: false
 
 ```{r}
 #| label: wd-3-string
+#| Lab 5 Step 2
+
+person |>
+  filter(str_detect(name, "Annabel"),
+         address_street_name == "Franklin Ave")
 
 ```
 
@@ -102,6 +177,17 @@ warning: false
 
 ```{r}
 #| label: wd-3-date
+#| PA 5.2
+
+Thanksgiving <- ymd("2022-11-24", tz = "America/Los_Angeles")
+
+suspects <- suspects |>
+  filter(
+    Time.Spotted %within% interval(
+          Thanksgiving - weeks(5),
+          Thanksgiving + weeks(5)
+          )
+    )
 
 ```
 
@@ -155,6 +241,13 @@ warning: false
 
 ```{r}
 #| label: wd-5-left-ex-1
+#| 
+
+interview |>
+  filter(person_id %in% c(witness1$id, witness2$id)) |>
+  left_join(person, 
+            by = c("person_id" = "id")) |>
+  pull(transcript, name)
 
 ```
 
